@@ -141,7 +141,7 @@ def importImage():
         cv2.destroyWindow("License Plate Detection")
 
         #Get the data from API source
-        payload = {'resource_id': '053cea08-09bc-40ec-8f7a-156f0677aff3', 'q': '4232112'}
+        payload = {'resource_id': '053cea08-09bc-40ec-8f7a-156f0677aff3', 'q': '5455354'}
         r = requests.get('https://data.gov.il/api/3/action/datastore_search', params=payload)
         res = r.json()
         record1 = res['result']['records']
@@ -168,7 +168,7 @@ def importImage():
         kinuy_mishari = record["kinuy_mishari"]
         canvas1.create_text(730, 50, text=str(mispar_rechev))
         canvas1.create_text(770, 70, text=tozeret_nm)
-        canvas1.create_text(700, 90, text=ramat_gimur)
+        canvas1.create_text(710, 90, text=ramat_gimur)
         canvas1.create_text(760, 110, text=ramat_eivzur_betihuty)
         canvas1.create_text(750, 130, text=shnat_yitzur)
         canvas1.create_text(820, 150, text=mivchan_acharon_dt)
