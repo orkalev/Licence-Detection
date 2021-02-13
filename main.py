@@ -5,23 +5,22 @@ import tkinter
 # Import module
 from tkinter import *
 import requests
+import PIL.Image, PIL.ImageTk
 from PIL import Image
 from PIL import ImageTk
 import tkinter.filedialog as tkFileDialog
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
+
+
 
 def importVideo():
    # faceDetector(mode='computerCamera')
-    print_hi('video')
+    print('video')
 
 
 def importImage():
-    # open a file chooser dialog and allow the user to select an input
-    # image
+    # open a file chooser dialog and allow the user to select an input image
     path = tkFileDialog.askopenfilename()
     if len(path) > 0:
         # Read the image file
@@ -71,15 +70,78 @@ def importImage():
 
         # Draw License Plate and write the Text
         image = cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 255), 3)
-        image = cv2.putText(image, text, (x - 100, y - 50), cv2.FONT_HERSHEY_SIMPLEX, 3, (0, 255, 0), 6, cv2.LINE_AA)
-       # cv2.createButton("Get Car Info", carInfo, None, cv2.QT_PUSH_BUTTON, 1)
+        carImageAfterDetection = cv2.putText(image, text, (x - 100, y - 50), cv2.FONT_HERSHEY_SIMPLEX, 3, (0, 255, 0), 6, cv2.LINE_AA)
+        #cv2.createButton("Get Car Info", carInfo, None, cv2.QT_PUSH_BUTTON, 1)
 
         print("License Plate :", text)
 
-        cv2.imshow("License Plate Detection", image)
+        # # Load a image using OpenCV
+        # cv_img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        #
+        # #Create new window for the Car Detection
+        # windownCarDetection = Tk()
+        #
+        # #Get the image dimensions
+        # height, width, no_channels = cv_img.shape
+        #
+        # #Create a canvas that can fit the aboce image
+        # canvasCarDetecation = Canvas(windownCarDetection, width = width, height = height)
+        # canvasCarDetecation.pack(fill="both", expand=True)
+        #
+        # # Use PIl (Pillow) to convert the NumPy ndaaray to a PhotoImage
+        # #photo = PIL.ImageTk.PhotoImage(image = PIL.Image.fromarray(cv_img))
+        #
+        # #Add a PhotoImage to the Canvas
+        # canvasCarDetecation.create_image(0, 0, image=cv_img, anchor='nw')
+        #
+        # windownCarDetection.mainloop()
 
-        # #Get the data from API source
-        payload = {'resource_id': '053cea08-09bc-40ec-8f7a-156f0677aff3', 'q': '5455354'}
+
+
+
+
+        #
+        # # Create object
+        # rootCarDetected = Tk()
+        #
+        # # Adjust size
+        # rootCarDetected.geometry("510x400")
+        #
+        # rootCarDetected.title('Licence Detection')
+        #
+        # # # Add image file
+        # # bg = PhotoImage(file="test2.png")
+        #
+        # # Create Canvas after find the number
+        # canvasNumberFound = Canvas(root, width=510,
+        #                        height=400)
+        #
+        # canvasNumberFound.pack(fill="both", expand=True)
+        #
+        # # Display image
+        # canvasNumberFound.create_image(0, 0, image=image,
+        #                      anchor="nw")
+        #
+        # # Add Text
+        # canvasNumberFound.create_text(280, 30, text="Car number found")
+        #
+        # # Create Buttons
+        # getCarInfo = tkinter.Button(root, text="Get Car Info", command=carInfo)
+        #
+        #
+        # # Display Buttons
+        # getCarInfo_canvas = canvasNumberFound.create_window(30, 10,
+        #                                                  anchor="nw",
+        #                                                  window=getCarInfo)
+        #
+        # root.importImage()
+
+        cv2.imshow("License Plate Detection", image)
+        cv2.waitKey(0)
+        cv2.destroyWindow("License Plate Detection")
+
+        #Get the data from API source
+        payload = {'resource_id': '053cea08-09bc-40ec-8f7a-156f0677aff3', 'q': '4232112'}
         r = requests.get('https://data.gov.il/api/3/action/datastore_search', params=payload)
         res = r.json()
         record1 = res['result']['records']
@@ -87,6 +149,7 @@ def importImage():
         record = record1[0]
         mispar_rechev = record["mispar_rechev"]
         tozeret_cd = record["tozeret_cd"]
+        tozeret_nm = record["tozeret_nm"]
         degem_nm = record["degem_nm"]
         ramat_gimur = record["ramat_gimur"]
         ramat_eivzur_betihuty = record["ramat_eivzur_betihuty"]
@@ -103,15 +166,29 @@ def importImage():
         sug_delek_nm = record["sug_delek_nm"]
         horaat_rishum = record["horaat_rishum"]
         kinuy_mishari = record["kinuy_mishari"]
+        canvas1.create_text(730, 50, text=str(mispar_rechev))
+        canvas1.create_text(770, 70, text=tozeret_nm)
+        canvas1.create_text(700, 90, text=ramat_gimur)
+        canvas1.create_text(760, 110, text=ramat_eivzur_betihuty)
+        canvas1.create_text(750, 130, text=shnat_yitzur)
+        canvas1.create_text(820, 150, text=mivchan_acharon_dt)
+        canvas1.create_text(820, 170, text=tokef_dt)
+        canvas1.create_text(740, 190, text= baalut)
+        canvas1.create_text(790, 210, text=misgeret)
+        canvas1.create_text(730, 230, text=tzeva_rechev)
+        canvas1.create_text(740, 250, text=sug_delek_nm)
+        canvas1.create_text(740, 270, text=kinuy_mishari)
 
-        print(kinuy_mishari)
+        canvas1.update()
+        return mispar_rechev
 
-#def carInfo():
+def carInfo():
+    print('blablabla')
 
 
 def exitUI():
     # faceDetector(mode='videoFile')
-    print_hi('exit')
+    print('exit')
 
 
 
@@ -119,7 +196,7 @@ def exitUI():
 root = Tk()
 
 # Adjust size
-root.geometry("510x400")
+root.geometry("900x400")
 
 root.title('Licence Detection')
 
@@ -139,6 +216,21 @@ canvas1.create_image(0, 0, image=bg,
 # Add Text
 canvas1.create_text(280, 30, text="Welcome to the licence detector")
 
+# Add the field text
+canvas1.create_text(660, 50, text="Car Number: ")
+canvas1.create_text(660, 70, text="Manufacturer country:")
+canvas1.create_text(660, 90, text="Level:")
+canvas1.create_text(660, 110, text="Fitting safety level:")
+canvas1.create_text(660, 130, text="Production year:")
+canvas1.create_text(650, 150, text="Last vehicle licensing test:")
+canvas1.create_text(650, 170, text="Next vehicle licensing test:")
+canvas1.create_text(660, 190, text="Current ownership:")
+canvas1.create_text(650, 210, text="Car build number:")
+canvas1.create_text(660, 230, text="Color:")
+canvas1.create_text(660, 250, text="Fuel type:")
+canvas1.create_text(660, 270, text="Trade alias:")
+
+
 
 # Create Buttons
 importVideoButton = tkinter.Button(root,text= "Import Video",command=importVideo)
@@ -157,6 +249,9 @@ importImageButton_canvas = canvas1.create_window(30, 40,
 
 exitButton_canvas = canvas1.create_window(30, 70, anchor="nw",
                                        window=exitButton)
+
+
+
 
 # Execute tkinter
 root.mainloop()
