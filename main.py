@@ -12,10 +12,6 @@ import tkinter.filedialog as tkFileDialog
 import numpy as np
 
 
-def importVideo():
-    # faceDetector(mode='computerCamera')
-    print('video')
-
 
 def order_points(pts):
     # initialzie a list of coordinates that will be ordered
@@ -117,48 +113,57 @@ def automatic_brightness_and_contrast(image, clip_hist_percent=10):
 
 
 def detect(img_rgb):
-    copy_image = img_rgb.copy()
+    copy_image = img_rgb.copy()       # Copy Image
     input_height = img_rgb.shape[0]
     input_width = img_rgb.shape[1]
-    hsv_frame = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2HSV)
+    # input_height, input_width = img_rgb.shape[:]
+
+    hsv_frame = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2HSV) # RGB -> HSV (for yellow sepration )
     #Print the hsv_frame
     # cv2.imshow("License Plate Detection", hsv_frame)
     # cv2.waitKey(0)
     # cv2.destroyWindow("License Plate Detection")
 
     # yellow color
-    low_yellow = np.array([20, 100, 100])
-    high_yellow = np.array([30, 255, 255])
-    yellow_mask = cv2.inRange(hsv_frame, low_yellow, high_yellow)
-    yellow = cv2.bitwise_and(yellow_mask, yellow_mask, mask=yellow_mask)
+    # low_yellow = np.array([20, 100, 100])
+    # high_yellow = np.array([30, 255, 255])
+    # yellow_mask = cv2.inRange(hsv_frame, low_yellow, high_yellow)
+    # yellow = cv2.bitwise_and(yellow_mask, yellow_mask, mask=yellow_mask)
+    low_yellow = np.array([17, 90, 90])      # Get the low yellow from the hsv
+    high_yellow = np.array([30, 255, 255])    # get the high yellow from the hsv
+    yellow_mask = cv2.inRange(hsv_frame, low_yellow, high_yellow)      # get all range from low to high
+    yellow = cv2.bitwise_and(yellow_mask, yellow_mask, mask=yellow_mask)   # bit wise and to transporm to gray image
 
     # step 1
-    # cv2.imshow("License Plate Detection", yellow)
-    # cv2.waitKey(0)
-    # cv2.destroyWindow("License Plate Detection")
+    cv2.imshow("License Plate Detection", yellow)
+    cv2.waitKey(0)
+    cv2.destroyWindow("License Plate Detection")
 
     # close morph
-    k = np.ones((5, 5), np.uint8)
-    closing = cv2.morphologyEx(yellow, cv2.MORPH_CLOSE, k)
-
+    k = np.ones((5, 5), np.uint8)      #Creat structer element
+    closing = cv2.morphologyEx(yellow, cv2.MORPH_CLOSE, k)   # Fill litel holes using morphology close opration
+    cv2.imshow("License Plate Detection", closing)
+    cv2.waitKey(0)
+    cv2.destroyWindow("License Plate Detection")
+    closing = cv2.morphologyEx(closing, cv2.MORPH_CLOSE, k)
     # step 2
-    # cv2.imshow("License Plate Detection", closing)
-    # cv2.waitKey(0)
-    # cv2.destroyWindow("License Plate Detection")
+    cv2.imshow("License Plate Detection", closing)
+    cv2.waitKey(0)
+    cv2.destroyWindow("License Plate Detection")
 
     # Detected yellow area
-    contours, hierarchy = cv2.findContours(closing, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    contours, hierarchy = cv2.findContours(closing, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)    # contours aka claster
     # List of final crops
     crops = []
 
     # Loop over contours and find license plates
     for cnt in contours:
-        x, y, w, h = cv2.boundingRect(cnt)
+        x, y, w, h = cv2.boundingRect(cnt)     # find the rect of the shape
 
         # Conditions on crops dimensions and area
-        if h * 6 > w > 2 * h and h > 0.1 * w and w * h > input_height * input_width * 0.0001:
+        if h * 6 > w > 2 * h and h > 0.1 * w and w * h > input_height * input_width * 0.0001:        #check the size of the rect
             # Make a crop from the RGB image, the crop is slided a bit at left to detect bleu area
-            crop_img = img_rgb[y:y + h, x - round(w / 10):x]
+            crop_img = img_rgb[y:y + h, x - round(w / 10):x]    # crop the plant
             crop_img = crop_img.astype('uint8')
             # Compute bleu color density at the left of the crop
             # Bleu color condition
@@ -200,11 +205,16 @@ def detect(img_rgb):
                     # Make a crop from the gray image
                     crop_gray = imgray[y:y + h, x:x + w]
                     crop_gray = crop_gray.astype('uint8')
+######## if we reach here : we now have the yellow image crop of the plate
+
 
                     # Detect chars inside yellow crop with specefic dimension and area
                     th = cv2.adaptiveThreshold(crop_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,
-                                               11, 2)
+                                               11, 2)   # make a mask(black and white) img
+                                                        # from the croped yellow plate
                     contours2, hierarchy = cv2.findContours(th, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                    #find contoures like before
+                    #then run for each contour in contours and try to match bounding box for each letter
 
                     # Init number of chars
                     chars = 0
@@ -236,34 +246,34 @@ def process(src):
     # Brigthness and contrast adjustment
     # cv2.imwrite("temp/steps/3_detected_plate.png", src)
     #step 3
-    # cv2.imshow("License Plate Detection", src)
-    # cv2.waitKey(0)
-    # cv2.destroyWindow("License Plate Detection")
+    cv2.imshow("License Plate Detection", src)
+    cv2.waitKey(0)
+    cv2.destroyWindow("License Plate Detection")
 
     adjusted, a, b = automatic_brightness_and_contrast(src)
     #Step 4
-    # cv2.imshow("License Plate Detection", adjusted)
-    # cv2.waitKey(0)
-    # cv2.destroyWindow("License Plate Detection")
+    cv2.imshow("License Plate Detection", adjusted)
+    cv2.waitKey(0)
+    cv2.destroyWindow("License Plate Detection")
 
     # cv2.imwrite("temp/steps/4_Brigthness_contrast_adjustment.png", adjusted)
     # BGR to gray
     gray = cv2.cvtColor(adjusted, cv2.COLOR_BGR2GRAY)
     # step 5
-    # cv2.imshow("License Plate Detection", gray)
-    # cv2.waitKey(0)
-    # cv2.destroyWindow("License Plate Detection")
+    cv2.imshow("License Plate Detection", gray)
+    cv2.waitKey(0)
+    cv2.destroyWindow("License Plate Detection")
 
     # cv2.imwrite("temp/steps/5_gray.png", gray)
     # Binary thresh
     # ret, th = cv2.threshold(gray, 140, 255, cv2.THRESH_BINARY)
     ret, th = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     #Step 6
-    # cv2.imshow("License Plate Detection", th)
-    # cv2.waitKey(0)
-    # cv2.destroyWindow("License Plate Detection")
+    cv2.imshow("License Plate Detection", th)
+    cv2.waitKey(0)
+    cv2.destroyWindow("License Plate Detection")
     # cv2.imwrite("temp/steps/6_threshold.png", th)
-    return th
+    return gray
 
 
 def test():
@@ -278,6 +288,40 @@ def test():
     cv2.destroyWindow("License Plate Detection")
 
 
+def importVideo():
+    path = tkFileDialog.askopenfilename()
+    cap = cv2.VideoCapture(path)
+
+    if cap.isOpened() == False:
+        print("Error opening video stream or file")
+
+    while (cap.isOpened()):
+        # Capture frame-by-frame
+        ret, frame = cap.read()
+        if ret == True:
+
+            frame, crop = detect(frame)
+            # Display the resulting frame
+
+            cv2.putText(frame, 'Press \'Q\' to exit !',(50, 50),cv2.FONT_HERSHEY_SIMPLEX,1,(0, 0, 255), 2)
+            cv2.imshow('Frame', frame)
+
+            # Press Q on keyboard to  exit
+            if cv2.waitKey(25) & 0xFF == ord('q'):
+                break
+
+        # Break the loop
+        else:
+            break
+
+    # When everything done, release the video capture object
+    cap.release()
+
+    # Closes all the frames
+    cv2.destroyAllWindows()
+
+
+
 def importImage():
     # open a file chooser dialog and allow the user to select an input image
     path = tkFileDialog.askopenfilename()
@@ -289,12 +333,13 @@ def importImage():
         i = 1
         for crop in crops:
             crop = process(crop)
-            cv2.imshow("License Plate Detection", crop)
+            cv2.imshow("elddddddd", crops)
             cv2.waitKey(0)
             cv2.destroyWindow("License Plate Detection")
             # cv2.imwrite('temp/crop' + str(i) + '.jpg', crop)
             # text = pytesseract.image_to_string(Image.open('temp/crop1.jpg'))
-            text = pytesseract.image_to_string(crop, lang='eng', config='--psm 6')
+            text = pytesseract.image_to_string(crop, config='--psm 13 -c tessedit_char_whitelist=0123456789')
+            #text = pytesseract.image_to_string(crop, lang='eng', config='--psm 10 --oem 3 -c tessedit_char_whitelist=0123456789')
             print(text)
             i += 1
         # cv2.imwrite('temp/detection.jpg', detection)
@@ -411,11 +456,11 @@ def importImage():
         cv2.destroyWindow("License Plate Detection")
 
         # Get the data from API source
-        payload = {'resource_id': '053cea08-09bc-40ec-8f7a-156f0677aff3', 'q': '5455354'}
+        payload = {'resource_id': '053cea08-09bc-40ec-8f7a-156f0677aff3', 'q': text}
         r = requests.get('https://data.gov.il/api/3/action/datastore_search', params=payload)
         res = r.json()
         record1 = res['result']['records']
-
+        #print(str(record1))
         record = record1[0]
         mispar_rechev = record["mispar_rechev"]
         tozeret_cd = record["tozeret_cd"]
@@ -453,13 +498,10 @@ def importImage():
         return mispar_rechev
 
 
-def carInfo():
-    print('blablabla')
 
 
 def exitUI():
-    # faceDetector(mode='videoFile')
-    print('exit')
+    exit(0)
 
 
 # Create object
