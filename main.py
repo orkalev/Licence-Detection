@@ -107,49 +107,43 @@ def automatic_brightness_and_contrast(image, clip_hist_percent=10):
     return auto_result, alpha, beta
 
 
-def detect(img_rgb):
-    copy_image = img_rgb.copy()       # Copy Image
-    input_height, input_width, c = img_rgb.shape
-
-    hsv_frame = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2HSV) # RGB -> HSV (for yellow sepration )
-
-    yellow_mask = cv2.inRange(hsv_frame, np.array([17, 90, 90]), np.array([30, 255, 255]))      # get all range from low to high
-    yellow = cv2.bitwise_and(yellow_mask, yellow_mask, mask=yellow_mask)   # bit wise and to transporm to gray image
-
-    # close morph
+def detect_plant(original_image):
+    imageHeight, imageWidth, c = original_image.shape
+    copy_image = original_image.copy()       # Copy Image
+    hsvColorImage = cv2.cvtColor(original_image, cv2.COLOR_BGR2HSV) # RGB -> HSV (for yellow sepration )
+    yellowImage = cv2.inRange(hsvColorImage, np.array([17, 90, 90]), np.array([30, 255, 255]))      # get all range from low to high
+    yellowGrayImage = cv2.bitwise_and(yellowImage, yellowImage, mask=yellowImage)   # bit wise and to transporm to gray image
     k = np.ones((5, 5), np.uint8)      #Creat structer element
-    # Double closing to the image
-    closing = cv2.morphologyEx(yellow, cv2.MORPH_CLOSE, k)   # Fill litel holes using morphology close opration
-    closing = cv2.morphologyEx(closing, cv2.MORPH_CLOSE, k)
 
+    # Double closing to the image
+    closingMorpho = cv2.morphologyEx(yellowGrayImage, cv2.MORPH_CLOSE, k)   # Fill litel holes using morphology close opration
+    closingMorpho = cv2.morphologyEx(closingMorpho, cv2.MORPH_CLOSE, k)
 
     # Detected yellow area
-    contours, hierarchy = cv2.findContours(closing, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)    # contours aka claster
-    # List of final crops
-    crops = []
+    contours, her = cv2.findContours(closingMorpho, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)    # contours aka claster
 
     # Loop over contours and find license plates
     for cnt in contours:
         x, y, w, h = cv2.boundingRect(cnt)     # find the rect of the shape
 
         # Conditions on crops dimensions and area
-        if h * 6 > w > 2 * h and h > 0.1 * w and w * h > input_height * input_width * 0.0001:        #check the size of the rect
+        if h * 6 > w > 2 * h and h > 0.1 * w and w * h > imageHeight * imageWidth * 0.0001:        #check the size of the rect
             # Make a crop from the RGB image, the crop is slided a bit at left to detect bleu area
-            crop_img = img_rgb[y:y + h, x - round(w / 10):x]    # crop the plant
+            crop_img = original_image[y:y + h, x - round(w / 10):x]    # crop the plant
             crop_img = crop_img.astype('uint8')
 
             # Compute yellow color density in the crop
             # Make a crop from the RGB image
-            imgray = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY)
-            crop_img_yellow = img_rgb[y:y + h, x:x + w]
+            imgray = cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
+            crop_img_yellow = original_image[y:y + h, x:x + w]
             crop_img_yellow = crop_img_yellow.astype('uint8')
 
             # Detect yellow color
-            hsv_frame = cv2.cvtColor(crop_img_yellow, cv2.COLOR_BGR2HSV)
-            yellow_mask = cv2.inRange(hsv_frame, np.array([20, 100, 100]), np.array([30, 255, 255]))
+            hsvColorImage = cv2.cvtColor(crop_img_yellow, cv2.COLOR_BGR2HSV)
+            yellowImage = cv2.inRange(hsvColorImage, np.array([20, 100, 100]), np.array([30, 255, 255]))
 
             # Compute yellow density
-            yellow_summation = yellow_mask.sum()
+            yellow_summation = yellowImage.sum()
 
             # Condition on yellow color density in the crop
             if yellow_summation > 255 * crop_img.shape[0] * crop_img.shape[0] * 0.4:
@@ -164,7 +158,7 @@ def detect(img_rgb):
                 th = cv2.adaptiveThreshold(crop_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,
                                            11, 2)   # make a mask(black and white) img
                                                     # from the croped yellow plate
-                contours2, hierarchy = cv2.findContours(th, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                contours2, her = cv2.findContours(th, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
                 #find contoures like before
                 #then run for each contour in contours and try to match bounding box for each letter
 
@@ -178,36 +172,19 @@ def detect(img_rgb):
 
                 # Condition on the number of chars
                 if 20 > chars > 4:
-                    rect = cv2.minAreaRect(cnt)
-                    box = cv2.boxPoints(rect)
-                    box = np.int0(box)
+                    box = np.int0(cv2.boxPoints(cv2.minAreaRect(cnt)))
                     pts = np.array(box)
-                    warped = four_point_transform(copy_image, pts)
-                    crops.append(warped)
-
-                    # Using cv2.putText() method
-                    img_rgb = cv2.putText(img_rgb, 'License Plate', (x - 20, y), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                    adjusted, a, b = automatic_brightness_and_contrast(four_point_transform(copy_image, pts))
+                    plate = cv2.cvtColor(adjusted, cv2.COLOR_BGR2GRAY)
+                    licenseNum = pytesseract.image_to_string(plate, config='--psm 13 -c tessedit_char_whitelist=0123456789')
+                    # Put the license number on the photo
+                    original_image = cv2.putText(original_image, 'License Num - ' + licenseNum , (x - 100, y-10), cv2.FONT_HERSHEY_SIMPLEX, 1,
                                           (0, 255, 255), 2, cv2.LINE_AA)
-
-                    cv2.drawContours(img_rgb, [box], 0, (0, 0, 255), 2)
-                    adjusted, a, b = automatic_brightness_and_contrast(crops[0])
-                    gray = cv2.cvtColor(adjusted, cv2.COLOR_BGR2GRAY)
-
-    return img_rgb, gray
+                    cv2.drawContours(original_image, [box], 0, (0, 0, 255), 2)
 
 
+    return original_image, licenseNum
 
-
-def test():
-    path = '/Users/orkalev/Desktop/cars/2.jpg'
-    image = cv2.imread(path)
-    #img_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    detection, crops = detect(image)
-    #crop = process(crops[0])
-
-    cv2.imshow("License Plate Detection", detection)
-    cv2.waitKey(0)
-    cv2.destroyWindow("License Plate Detection")
 
 
 def importVideo():
@@ -222,7 +199,7 @@ def importVideo():
         ret, frame = cap.read()
         if ret == True:
 
-            frame, crop = detect(frame)
+            frame, crop = detect_plant(frame)
             # Display the resulting frame
 
             cv2.putText(frame, 'Press \'Q\' to exit !',(50, 50),cv2.FONT_HERSHEY_SIMPLEX,1,(0, 0, 255), 2)
@@ -250,21 +227,21 @@ def importImage():
     if len(path) > 0:
         # Read the image file
         image = cv2.imread(path)
-        detection, plate = detect(image)
-        text = pytesseract.image_to_string(plate, config='--psm 13 -c tessedit_char_whitelist=0123456789')
-        print(text)
+        detection, licenseNum = detect_plant(image)
+        #text = pytesseract.image_to_string(plate, config='--psm 13 -c tessedit_char_whitelist=0123456789')
+        print(licenseNum)
 
         cv2.imshow("The car after detection", detection)
         cv2.waitKey(0)
         cv2.destroyWindow("The car after detection")
 
         # Get the data from API source
-        payload = {'resource_id': '053cea08-09bc-40ec-8f7a-156f0677aff3', 'q': text}
+        payload = {'resource_id': '053cea08-09bc-40ec-8f7a-156f0677aff3', 'q': licenseNum}
         r = requests.get('https://data.gov.il/api/3/action/datastore_search', params=payload)
         res = r.json()
         record1 = res['result']['records']
         if len(record1) == 0:
-            print("The car " + text + "is not at the data set")
+            print("The car " + licenseNum + "is not at the data set")
         else:
             record = record1[0]
             mispar_rechev = record["mispar_rechev"]
