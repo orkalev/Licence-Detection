@@ -71,46 +71,35 @@ def four_point_transform(image, pts):
     return warped
 
 
-def automatic_brightness_and_contrast(image, clip_hist_percent=10):
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+def filter_contrast(image):
+    contrastPrsent = 10
+    grayImage = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    grayscaleHistogram = cv2.calcHist([grayImage], [0], None, [256], [0, 256]) # Get the grayscale histogram
+    acc = []
+    acc.append(float(grayscaleHistogram[0]))
+    for index in range(1, len(grayscaleHistogram)):
+        acc.append(acc[index - 1] + float(grayscaleHistogram[index]))
 
-    # Calculate grayscale histogram
-    hist = cv2.calcHist([gray], [0], None, [256], [0, 256])
-    hist_size = len(hist)
-
-    # Calculate cumulative distribution from the histogram
-    accumulator = []
-    accumulator.append(float(hist[0]))
-    for index in range(1, hist_size):
-        accumulator.append(accumulator[index - 1] + float(hist[index]))
-
-    # Locate points to clip
-    maximum = accumulator[-1]
-    clip_hist_percent *= (maximum / 100.0)
-    clip_hist_percent /= 2.0
+    contrastPrsent *= (acc[-1] / 100.0)
+    contrastPrsent /= 2.0
 
     # Locate left cut
-    minimum_gray = 0
-    while accumulator[minimum_gray] < clip_hist_percent:
-        minimum_gray += 1
+    minGray = 0
+    while acc[minGray] < contrastPrsent:
+        minGray += 1
 
     # Locate right cut
-    maximum_gray = hist_size - 1
-    while accumulator[maximum_gray] >= (maximum - clip_hist_percent):
-        maximum_gray -= 1
+    maxGray = len(grayscaleHistogram) - 1
+    while acc[maxGray] >= (acc[-1] - contrastPrsent):
+        maxGray -= 1
 
-    # Calculate alpha and beta values
-    alpha = 255 / (maximum_gray - minimum_gray)
-    beta = -minimum_gray * alpha
-
-    auto_result = cv2.convertScaleAbs(image, alpha=alpha, beta=beta)
-    return auto_result, alpha, beta
+    return cv2.convertScaleAbs(image, alpha=255 / (maxGray - minGray), beta=-minGray * 255 / (maxGray - minGray))
 
 
-def detect_plant(original_image):
-    imageHeight, imageWidth, c = original_image.shape
-    copy_image = original_image.copy()       # Copy Image
-    hsvColorImage = cv2.cvtColor(original_image, cv2.COLOR_BGR2HSV) # RGB -> HSV (for yellow sepration )
+def detect_plant(originalImage):
+    imageHeight, imageWidth, c = originalImage.shape
+    copyImage = originalImage.copy()       # Copy Image
+    hsvColorImage = cv2.cvtColor(originalImage, cv2.COLOR_BGR2HSV) # RGB -> HSV (for yellow sepration )
     yellowImage = cv2.inRange(hsvColorImage, np.array([17, 90, 90]), np.array([30, 255, 255]))      # get all range from low to high
     yellowGrayImage = cv2.bitwise_and(yellowImage, yellowImage, mask=yellowImage)   # bit wise and to transporm to gray image
     k = np.ones((5, 5), np.uint8)      #Creat structer element
@@ -123,30 +112,29 @@ def detect_plant(original_image):
     contours, her = cv2.findContours(closingMorpho, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)    # contours aka claster
 
     # Loop over contours and find license plates
-    for cnt in contours:
-        x, y, w, h = cv2.boundingRect(cnt)     # find the rect of the shape
+    for contour in contours:
+        x, y, w, h = cv2.boundingRect(contour)     # find the rect of the shape
 
         # Conditions on crops dimensions and area
         if h * 6 > w > 2 * h and h > 0.1 * w and w * h > imageHeight * imageWidth * 0.0001:        #check the size of the rect
-            # Make a crop from the RGB image, the crop is slided a bit at left to detect bleu area
-            crop_img = original_image[y:y + h, x - round(w / 10):x]    # crop the plant
-            crop_img = crop_img.astype('uint8')
+            cropImage = originalImage[y:y + h, x - round(w / 10):x]    # crop the plant
+            cropImage = cropImage.astype('uint8')
 
             # Compute yellow color density in the crop
             # Make a crop from the RGB image
-            imgray = cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
-            crop_img_yellow = original_image[y:y + h, x:x + w]
-            crop_img_yellow = crop_img_yellow.astype('uint8')
+            imgray = cv2.cvtColor(originalImage, cv2.COLOR_BGR2GRAY)
+            cropImageYellow = originalImage[y:y + h, x:x + w]
+            cropImageYellow = cropImageYellow.astype('uint8')
 
             # Detect yellow color
-            hsvColorImage = cv2.cvtColor(crop_img_yellow, cv2.COLOR_BGR2HSV)
+            hsvColorImage = cv2.cvtColor(cropImageYellow, cv2.COLOR_BGR2HSV)
             yellowImage = cv2.inRange(hsvColorImage, np.array([20, 100, 100]), np.array([30, 255, 255]))
 
             # Compute yellow density
             yellow_summation = yellowImage.sum()
 
             # Condition on yellow color density in the crop
-            if yellow_summation > 255 * crop_img.shape[0] * crop_img.shape[0] * 0.4:
+            if yellow_summation > 255 * cropImage.shape[0] * cropImage.shape[0] * 0.4:
 
                 # Make a crop from the gray image
                 crop_gray = imgray[y:y + h, x:x + w]
@@ -172,18 +160,18 @@ def detect_plant(original_image):
 
                 # Condition on the number of chars
                 if 20 > chars > 4:
-                    box = np.int0(cv2.boxPoints(cv2.minAreaRect(cnt)))
+                    box = np.int0(cv2.boxPoints(cv2.minAreaRect(contour)))
                     pts = np.array(box)
-                    adjusted, a, b = automatic_brightness_and_contrast(four_point_transform(copy_image, pts))
+                    adjusted = filter_contrast(four_point_transform(copyImage, pts))
                     plate = cv2.cvtColor(adjusted, cv2.COLOR_BGR2GRAY)
                     licenseNum = pytesseract.image_to_string(plate, config='--psm 13 -c tessedit_char_whitelist=0123456789')
                     # Put the license number on the photo
-                    original_image = cv2.putText(original_image, 'License Num - ' + licenseNum , (x - 100, y-10), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                    originalImage = cv2.putText(originalImage, '#' + licenseNum , (x - 100, y-10), cv2.FONT_HERSHEY_SIMPLEX, 1,
                                           (0, 255, 255), 2, cv2.LINE_AA)
-                    cv2.drawContours(original_image, [box], 0, (0, 0, 255), 2)
+                    cv2.drawContours(originalImage, [box], 0, (0, 0, 255), 2)
 
 
-    return original_image, licenseNum
+    return originalImage, licenseNum
 
 
 
@@ -227,8 +215,11 @@ def importImage():
     if len(path) > 0:
         # Read the image file
         image = cv2.imread(path)
+        cv2.imshow("The car before detection", image)
+        cv2.waitKey(0)
+        cv2.destroyWindow("The car before detection")
+
         detection, licenseNum = detect_plant(image)
-        #text = pytesseract.image_to_string(plate, config='--psm 13 -c tessedit_char_whitelist=0123456789')
         print(licenseNum)
 
         cv2.imshow("The car after detection", detection)
