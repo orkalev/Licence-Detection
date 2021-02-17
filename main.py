@@ -1,13 +1,8 @@
 import cv2
 import pytesseract
 import tkinter
-# from tkinter import filedialog
-# Import module
 from tkinter import *
 import requests
-import PIL.Image, PIL.ImageTk
-from PIL import Image
-from PIL import ImageTk
 import tkinter.filedialog as tkFileDialog
 import numpy as np
 
@@ -114,42 +109,19 @@ def automatic_brightness_and_contrast(image, clip_hist_percent=10):
 
 def detect(img_rgb):
     copy_image = img_rgb.copy()       # Copy Image
-    input_height = img_rgb.shape[0]
-    input_width = img_rgb.shape[1]
-    # input_height, input_width = img_rgb.shape[:]
+    input_height, input_width, c = img_rgb.shape
 
     hsv_frame = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2HSV) # RGB -> HSV (for yellow sepration )
-    #Print the hsv_frame
-    # cv2.imshow("License Plate Detection", hsv_frame)
-    # cv2.waitKey(0)
-    # cv2.destroyWindow("License Plate Detection")
 
-    # yellow color
-    # low_yellow = np.array([20, 100, 100])
-    # high_yellow = np.array([30, 255, 255])
-    # yellow_mask = cv2.inRange(hsv_frame, low_yellow, high_yellow)
-    # yellow = cv2.bitwise_and(yellow_mask, yellow_mask, mask=yellow_mask)
-    low_yellow = np.array([17, 90, 90])      # Get the low yellow from the hsv
-    high_yellow = np.array([30, 255, 255])    # get the high yellow from the hsv
-    yellow_mask = cv2.inRange(hsv_frame, low_yellow, high_yellow)      # get all range from low to high
+    yellow_mask = cv2.inRange(hsv_frame, np.array([17, 90, 90]), np.array([30, 255, 255]))      # get all range from low to high
     yellow = cv2.bitwise_and(yellow_mask, yellow_mask, mask=yellow_mask)   # bit wise and to transporm to gray image
-
-    # step 1
-    cv2.imshow("License Plate Detection", yellow)
-    cv2.waitKey(0)
-    cv2.destroyWindow("License Plate Detection")
 
     # close morph
     k = np.ones((5, 5), np.uint8)      #Creat structer element
+    # Double closing to the image
     closing = cv2.morphologyEx(yellow, cv2.MORPH_CLOSE, k)   # Fill litel holes using morphology close opration
-    cv2.imshow("License Plate Detection", closing)
-    cv2.waitKey(0)
-    cv2.destroyWindow("License Plate Detection")
     closing = cv2.morphologyEx(closing, cv2.MORPH_CLOSE, k)
-    # step 2
-    cv2.imshow("License Plate Detection", closing)
-    cv2.waitKey(0)
-    cv2.destroyWindow("License Plate Detection")
+
 
     # Detected yellow area
     contours, hierarchy = cv2.findContours(closing, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)    # contours aka claster
@@ -165,115 +137,65 @@ def detect(img_rgb):
             # Make a crop from the RGB image, the crop is slided a bit at left to detect bleu area
             crop_img = img_rgb[y:y + h, x - round(w / 10):x]    # crop the plant
             crop_img = crop_img.astype('uint8')
-            # Compute bleu color density at the left of the crop
-            # Bleu color condition
-            try:
-                hsv_frame = cv2.cvtColor(crop_img, cv2.COLOR_BGR2HSV)
-                #Print the hsv_frame
-                # cv2.imshow("License Plate Detection", hsv_frame)
-                # cv2.waitKey(0)
-                # cv2.destroyWindow("License Plate Detection")
-                low_bleu = np.array([100, 150, 0])
-                high_bleu = np.array([140, 255, 255])
-                bleu_mask = cv2.inRange(hsv_frame, low_bleu, high_bleu)
-                bleu_summation = bleu_mask.sum()
 
-            except:
-                bleu_summation = 0
+            # Compute yellow color density in the crop
+            # Make a crop from the RGB image
+            imgray = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY)
+            crop_img_yellow = img_rgb[y:y + h, x:x + w]
+            crop_img_yellow = crop_img_yellow.astype('uint8')
 
-            # Condition on bleu color density at the left of the crop
-            if bleu_summation > 550:
+            # Detect yellow color
+            hsv_frame = cv2.cvtColor(crop_img_yellow, cv2.COLOR_BGR2HSV)
+            yellow_mask = cv2.inRange(hsv_frame, np.array([20, 100, 100]), np.array([30, 255, 255]))
 
-                # Compute yellow color density in the crop
-                # Make a crop from the RGB image
-                imgray = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY)
-                crop_img_yellow = img_rgb[y:y + h, x:x + w]
-                crop_img_yellow = crop_img_yellow.astype('uint8')
+            # Compute yellow density
+            yellow_summation = yellow_mask.sum()
 
-                # Detect yellow color
-                hsv_frame = cv2.cvtColor(crop_img_yellow, cv2.COLOR_BGR2HSV)
-                low_yellow = np.array([20, 100, 100])
-                high_yellow = np.array([30, 255, 255])
-                yellow_mask = cv2.inRange(hsv_frame, low_yellow, high_yellow)
+            # Condition on yellow color density in the crop
+            if yellow_summation > 255 * crop_img.shape[0] * crop_img.shape[0] * 0.4:
 
-                # Compute yellow density
-                yellow_summation = yellow_mask.sum()
-
-                # Condition on yellow color density in the crop
-                if yellow_summation > 255 * crop_img.shape[0] * crop_img.shape[0] * 0.4:
-
-                    # Make a crop from the gray image
-                    crop_gray = imgray[y:y + h, x:x + w]
-                    crop_gray = crop_gray.astype('uint8')
+                # Make a crop from the gray image
+                crop_gray = imgray[y:y + h, x:x + w]
+                crop_gray = crop_gray.astype('uint8')
 ######## if we reach here : we now have the yellow image crop of the plate
 
 
-                    # Detect chars inside yellow crop with specefic dimension and area
-                    th = cv2.adaptiveThreshold(crop_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,
-                                               11, 2)   # make a mask(black and white) img
-                                                        # from the croped yellow plate
-                    contours2, hierarchy = cv2.findContours(th, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-                    #find contoures like before
-                    #then run for each contour in contours and try to match bounding box for each letter
+                # Detect chars inside yellow crop with specefic dimension and area
+                th = cv2.adaptiveThreshold(crop_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,
+                                           11, 2)   # make a mask(black and white) img
+                                                    # from the croped yellow plate
+                contours2, hierarchy = cv2.findContours(th, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                #find contoures like before
+                #then run for each contour in contours and try to match bounding box for each letter
 
-                    # Init number of chars
-                    chars = 0
-                    for c in contours2:
-                        area2 = cv2.contourArea(c)
-                        x2, y2, w2, h2 = cv2.boundingRect(c)
-                        if w2 * h2 > h * w * 0.01 and h2 > w2 and area2 < h * w * 0.9:
-                            chars += 1
+                # Init number of chars
+                chars = 0
+                for c in contours2:
+                    area2 = cv2.contourArea(c)
+                    x2, y2, w2, h2 = cv2.boundingRect(c)
+                    if w2 * h2 > h * w * 0.01 and h2 > w2 and area2 < h * w * 0.9:
+                        chars += 1
 
-                    # Condition on the number of chars
-                    if 20 > chars > 4:
-                        rect = cv2.minAreaRect(cnt)
-                        box = cv2.boxPoints(rect)
-                        box = np.int0(box)
-                        pts = np.array(box)
-                        warped = four_point_transform(copy_image, pts)
-                        crops.append(warped)
+                # Condition on the number of chars
+                if 20 > chars > 4:
+                    rect = cv2.minAreaRect(cnt)
+                    box = cv2.boxPoints(rect)
+                    box = np.int0(box)
+                    pts = np.array(box)
+                    warped = four_point_transform(copy_image, pts)
+                    crops.append(warped)
 
-                        # Using cv2.putText() method
-                        img_rgb = cv2.putText(img_rgb, 'License Plate', (x - 20, y), cv2.FONT_HERSHEY_SIMPLEX, 1,
-                                              (0, 255, 255), 2, cv2.LINE_AA)
+                    # Using cv2.putText() method
+                    img_rgb = cv2.putText(img_rgb, 'License Plate', (x - 20, y), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                                          (0, 255, 255), 2, cv2.LINE_AA)
 
-                        cv2.drawContours(img_rgb, [box], 0, (0, 0, 255), 2)
+                    cv2.drawContours(img_rgb, [box], 0, (0, 0, 255), 2)
+                    adjusted, a, b = automatic_brightness_and_contrast(crops[0])
+                    gray = cv2.cvtColor(adjusted, cv2.COLOR_BGR2GRAY)
 
-    return img_rgb, crops
+    return img_rgb, gray
 
 
-def process(src):
-    # Brigthness and contrast adjustment
-    # cv2.imwrite("temp/steps/3_detected_plate.png", src)
-    #step 3
-    cv2.imshow("License Plate Detection", src)
-    cv2.waitKey(0)
-    cv2.destroyWindow("License Plate Detection")
-
-    adjusted, a, b = automatic_brightness_and_contrast(src)
-    #Step 4
-    cv2.imshow("License Plate Detection", adjusted)
-    cv2.waitKey(0)
-    cv2.destroyWindow("License Plate Detection")
-
-    # cv2.imwrite("temp/steps/4_Brigthness_contrast_adjustment.png", adjusted)
-    # BGR to gray
-    gray = cv2.cvtColor(adjusted, cv2.COLOR_BGR2GRAY)
-    # step 5
-    cv2.imshow("License Plate Detection", gray)
-    cv2.waitKey(0)
-    cv2.destroyWindow("License Plate Detection")
-
-    # cv2.imwrite("temp/steps/5_gray.png", gray)
-    # Binary thresh
-    # ret, th = cv2.threshold(gray, 140, 255, cv2.THRESH_BINARY)
-    ret, th = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    #Step 6
-    cv2.imshow("License Plate Detection", th)
-    cv2.waitKey(0)
-    cv2.destroyWindow("License Plate Detection")
-    # cv2.imwrite("temp/steps/6_threshold.png", th)
-    return gray
 
 
 def test():
@@ -281,7 +203,7 @@ def test():
     image = cv2.imread(path)
     #img_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     detection, crops = detect(image)
-    crop = process(crops[0])
+    #crop = process(crops[0])
 
     cv2.imshow("License Plate Detection", detection)
     cv2.waitKey(0)
@@ -325,177 +247,60 @@ def importVideo():
 def importImage():
     # open a file chooser dialog and allow the user to select an input image
     path = tkFileDialog.askopenfilename()
-    #path = '/Users/orkalev/Desktop/cars/2.jpg'
     if len(path) > 0:
         # Read the image file
         image = cv2.imread(path)
-        detection, crops = detect(image)
-        i = 1
-        for crop in crops:
-            crop = process(crop)
-            cv2.imshow("elddddddd", crops)
-            cv2.waitKey(0)
-            cv2.destroyWindow("License Plate Detection")
-            # cv2.imwrite('temp/crop' + str(i) + '.jpg', crop)
-            # text = pytesseract.image_to_string(Image.open('temp/crop1.jpg'))
-            text = pytesseract.image_to_string(crop, config='--psm 13 -c tessedit_char_whitelist=0123456789')
-            #text = pytesseract.image_to_string(crop, lang='eng', config='--psm 10 --oem 3 -c tessedit_char_whitelist=0123456789')
-            print(text)
-            i += 1
-        # cv2.imwrite('temp/detection.jpg', detection)
+        detection, plate = detect(image)
+        text = pytesseract.image_to_string(plate, config='--psm 13 -c tessedit_char_whitelist=0123456789')
+        print(text)
 
-        # # Convert to Grayscale Image
-        # gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        #
-        # # Canny Edge Detection
-        # canny_edge = cv2.Canny(gray_image, 170, 200)
-        #
-        # # Find contours based on Edges
-        # contours, new = cv2.findContours(canny_edge.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-        # contours = sorted(contours, key=cv2.contourArea, reverse=True)[:30]
-        #
-        # # Initialize license Plate contour and x,y coordinates
-        # contour_with_license_plate = None
-        # license_plate = None
-        # x = None
-        # y = None
-        # w = None
-        # h = None
-        #
-        # # Find the contour with 4 potential corners and creat ROI around it
-        # for contour in contours:
-        #     # Find Perimeter of contour and it should be a closed contour
-        #     perimeter = cv2.arcLength(contour, True)
-        #     approx = cv2.approxPolyDP(contour, 0.01 * perimeter, True)
-        #     if len(approx) == 4:  # see whether it is a Rect
-        #         contour_with_license_plate = approx
-        #         x, y, w, h = cv2.boundingRect(contour)
-        #         license_plate = gray_image[y:y + h, x:x + w]
-        #         break
-        #
-        # # Removing Noise from the detected image, before sending to Tesseract
-        # #cv2.imshow("License Plate Detection", license_plate)
-        # license_plate = cv2.bilateralFilter(license_plate, 11, 17, 17)
-        # (thresh, license_plate) = cv2.threshold(license_plate, 150, 180, cv2.THRESH_BINARY)
-        #
-        #
-        #
-        # # Text Recognition
-        # #text = pytesseract.image_to_string(license_plate)
-        # text = pytesseract.image_to_string(license_plate, lang='eng', config='--psm 6')
-        # #text = pytesseract.image_to_string(license_plate, lang='eng', config='--psm 6')
-        # #text = pytesseract.image_to_string(license_plate, lang='eng', config='--psm 10 --oem 3 -c tessedit_char_whitelist=0123456789')
-        #
-        #
-        # # Draw License Plate and write the Text
-        # image = cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 255), 3)
-        # carImageAfterDetection = cv2.putText(image, text, (x - 100, y - 50), cv2.FONT_HERSHEY_SIMPLEX, 3, (0, 255, 0), 6, cv2.LINE_AA)
-        # #cv2.createButton("Get Car Info", carInfo, None, cv2.QT_PUSH_BUTTON, 1)
-        #
-        # print("License Plate :", text)
-
-        # # Load a image using OpenCV
-        # cv_img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        #
-        # #Create new window for the Car Detection
-        # windownCarDetection = Tk()
-        #
-        # #Get the image dimensions
-        # height, width, no_channels = cv_img.shape
-        #
-        # #Create a canvas that can fit the aboce image
-        # canvasCarDetecation = Canvas(windownCarDetection, width = width, height = height)
-        # canvasCarDetecation.pack(fill="both", expand=True)
-        #
-        # # Use PIl (Pillow) to convert the NumPy ndaaray to a PhotoImage
-        # #photo = PIL.ImageTk.PhotoImage(image = PIL.Image.fromarray(cv_img))
-        #
-        # #Add a PhotoImage to the Canvas
-        # canvasCarDetecation.create_image(0, 0, image=cv_img, anchor='nw')
-        #
-        # windownCarDetection.mainloop()
-
-        #
-        # # Create object
-        # rootCarDetected = Tk()
-        #
-        # # Adjust size
-        # rootCarDetected.geometry("510x400")
-        #
-        # rootCarDetected.title('Licence Detection')
-        #
-        # # # Add image file
-        # # bg = PhotoImage(file="test2.png")
-        #
-        # # Create Canvas after find the number
-        # canvasNumberFound = Canvas(root, width=510,
-        #                        height=400)
-        #
-        # canvasNumberFound.pack(fill="both", expand=True)
-        #
-        # # Display image
-        # canvasNumberFound.create_image(0, 0, image=image,
-        #                      anchor="nw")
-        #
-        # # Add Text
-        # canvasNumberFound.create_text(280, 30, text="Car number found")
-        #
-        # # Create Buttons
-        # getCarInfo = tkinter.Button(root, text="Get Car Info", command=carInfo)
-        #
-        #
-        # # Display Buttons
-        # getCarInfo_canvas = canvasNumberFound.create_window(30, 10,
-        #                                                  anchor="nw",
-        #                                                  window=getCarInfo)
-        #
-        # root.importImage()
-        # print(text)
-        cv2.imshow("License Plate Detection", detection)
+        cv2.imshow("The car after detection", detection)
         cv2.waitKey(0)
-        cv2.destroyWindow("License Plate Detection")
+        cv2.destroyWindow("The car after detection")
 
         # Get the data from API source
         payload = {'resource_id': '053cea08-09bc-40ec-8f7a-156f0677aff3', 'q': text}
         r = requests.get('https://data.gov.il/api/3/action/datastore_search', params=payload)
         res = r.json()
         record1 = res['result']['records']
-        #print(str(record1))
-        record = record1[0]
-        mispar_rechev = record["mispar_rechev"]
-        tozeret_cd = record["tozeret_cd"]
-        tozeret_nm = record["tozeret_nm"]
-        degem_nm = record["degem_nm"]
-        ramat_gimur = record["ramat_gimur"]
-        ramat_eivzur_betihuty = record["ramat_eivzur_betihuty"]
-        kvutzat_zihum = record["kvutzat_zihum"]
-        shnat_yitzur = record["shnat_yitzur"]
-        degem_manoa = record["degem_manoa"]
-        mivchan_acharon_dt = record["mivchan_acharon_dt"]
-        tokef_dt = record["tokef_dt"]
-        baalut = record["baalut"]
-        misgeret = record["misgeret"]
-        tzeva_rechev = record["tzeva_rechev"]
-        zmig_kidmi = record["zmig_kidmi"]
-        zmig_ahori = record["zmig_ahori"]
-        sug_delek_nm = record["sug_delek_nm"]
-        horaat_rishum = record["horaat_rishum"]
-        kinuy_mishari = record["kinuy_mishari"]
-        canvas1.create_text(730, 50, text=str(mispar_rechev))
-        canvas1.create_text(770, 70, text=tozeret_nm)
-        canvas1.create_text(710, 90, text=ramat_gimur)
-        canvas1.create_text(760, 110, text=ramat_eivzur_betihuty)
-        canvas1.create_text(750, 130, text=shnat_yitzur)
-        canvas1.create_text(820, 150, text=mivchan_acharon_dt)
-        canvas1.create_text(820, 170, text=tokef_dt)
-        canvas1.create_text(740, 190, text=baalut)
-        canvas1.create_text(790, 210, text=misgeret)
-        canvas1.create_text(730, 230, text=tzeva_rechev)
-        canvas1.create_text(740, 250, text=sug_delek_nm)
-        canvas1.create_text(740, 270, text=kinuy_mishari)
+        if len(record1) == 0:
+            print("The car " + text + "is not at the data set")
+        else:
+            record = record1[0]
+            mispar_rechev = record["mispar_rechev"]
+            tozeret_cd = record["tozeret_cd"]
+            tozeret_nm = record["tozeret_nm"]
+            degem_nm = record["degem_nm"]
+            ramat_gimur = record["ramat_gimur"]
+            ramat_eivzur_betihuty = record["ramat_eivzur_betihuty"]
+            kvutzat_zihum = record["kvutzat_zihum"]
+            shnat_yitzur = record["shnat_yitzur"]
+            degem_manoa = record["degem_manoa"]
+            mivchan_acharon_dt = record["mivchan_acharon_dt"]
+            tokef_dt = record["tokef_dt"]
+            baalut = record["baalut"]
+            misgeret = record["misgeret"]
+            tzeva_rechev = record["tzeva_rechev"]
+            zmig_kidmi = record["zmig_kidmi"]
+            zmig_ahori = record["zmig_ahori"]
+            sug_delek_nm = record["sug_delek_nm"]
+            horaat_rishum = record["horaat_rishum"]
+            kinuy_mishari = record["kinuy_mishari"]
+            canvas1.create_text(730, 50, text=str(mispar_rechev))
+            canvas1.create_text(770, 70, text=tozeret_nm)
+            canvas1.create_text(710, 90, text=ramat_gimur)
+            canvas1.create_text(760, 110, text=ramat_eivzur_betihuty)
+            canvas1.create_text(750, 130, text=shnat_yitzur)
+            canvas1.create_text(820, 150, text=mivchan_acharon_dt)
+            canvas1.create_text(820, 170, text=tokef_dt)
+            canvas1.create_text(740, 190, text=baalut)
+            canvas1.create_text(790, 210, text=misgeret)
+            canvas1.create_text(730, 230, text=tzeva_rechev)
+            canvas1.create_text(740, 250, text=sug_delek_nm)
+            canvas1.create_text(740, 270, text=kinuy_mishari)
 
-        canvas1.update()
-        return mispar_rechev
+            canvas1.update()
+        return
 
 
 
