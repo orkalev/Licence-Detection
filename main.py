@@ -5,6 +5,7 @@ from tkinter import *
 import requests
 import tkinter.filedialog as tkFileDialog
 import numpy as np
+from tkinter import font
 from random import choice
 
 
@@ -36,6 +37,9 @@ def detect_plate(originalImage):
     copyImage = originalImage.copy()       # Copy Image
     hsvColorImage = cv2.cvtColor(originalImage, cv2.COLOR_BGR2HSV) # RGB -> HSV (for yellow sepration )
     yellowImage = cv2.inRange(hsvColorImage, np.array([17, 90, 90]), np.array([30, 255, 255]))      # get all range from low to high
+    cv2.imshow("The car before detection", yellowImage)
+    cv2.waitKey(0)
+    cv2.destroyWindow("The car before detection")
     yellowGrayImage = cv2.bitwise_and(yellowImage, yellowImage, mask=yellowImage)   # bit wise and to transporm to gray image
     k = np.ones((5, 5), np.uint8)      #Creat structer element
 
@@ -412,18 +416,18 @@ def importImage():
             sug_delek_nm = record["sug_delek_nm"]
             horaat_rishum = record["horaat_rishum"]
             kinuy_mishari = record["kinuy_mishari"]
-            canvas1.create_text(740, 50, text=str(mispar_rechev), anchor="w", tag="CarInfo")
-            canvas1.create_text(740, 70, text=tozeret_nm, anchor="w", tag="CarInfo")
-            canvas1.create_text(740, 90, text=ramat_gimur, anchor="w", tag="CarInfo")
-            canvas1.create_text(740, 110, text=ramat_eivzur_betihuty, anchor="w", tag="CarInfo")
-            canvas1.create_text(740, 130, text=shnat_yitzur, anchor="w", tag="CarInfo")
-            canvas1.create_text(740, 150, text=mivchan_acharon_dt, anchor="w", tag="CarInfo")
-            canvas1.create_text(740, 170, text=tokef_dt, anchor="w", tag="CarInfo")
-            canvas1.create_text(740, 190, text=baalut, anchor="w", tag="CarInfo")
-            canvas1.create_text(740, 210, text=misgeret, anchor="w", tag="CarInfo")
-            canvas1.create_text(740, 230, text=tzeva_rechev, anchor="w", tag="CarInfo")
-            canvas1.create_text(740, 250, text=sug_delek_nm, anchor="w", tag="CarInfo")
-            canvas1.create_text(740, 270, text=kinuy_mishari, anchor="w", tag="CarInfo")
+            canvas1.create_text(350, 200, text=str(mispar_rechev),fill="white",font=('Andale Mono', 15), anchor="w", tag="CarInfo")
+            canvas1.create_text(350, 230, text=tozeret_nm,fill="white",font=('Andale Mono', 15), anchor="w", tag="CarInfo")
+            canvas1.create_text(350, 260, text=ramat_gimur,fill="white",font=('Andale Mono', 15), anchor="w", tag="CarInfo")
+            canvas1.create_text(350, 290, text=ramat_eivzur_betihuty,fill="white",font=('Andale Mono', 15), anchor="w", tag="CarInfo")
+            canvas1.create_text(350, 320, text=shnat_yitzur,fill="white",font=('Andale Mono', 15), anchor="w", tag="CarInfo")
+            canvas1.create_text(350, 350, text=mivchan_acharon_dt,fill="white",font=('Andale Mono', 15), anchor="w", tag="CarInfo")
+            canvas1.create_text(350, 380, text=tokef_dt, anchor="w",fill="white",font=('Andale Mono', 15), tag="CarInfo")
+            canvas1.create_text(350, 410, text=baalut, anchor="w",fill="white",font=('Andale Mono', 15), tag="CarInfo")
+            canvas1.create_text(350, 440, text=misgeret, anchor="w",fill="white",font=('Andale Mono', 15), tag="CarInfo")
+            canvas1.create_text(350, 470, text=tzeva_rechev, anchor="w",fill="white",font=('Andale Mono', 15), tag="CarInfo")
+            canvas1.create_text(350, 500, text=sug_delek_nm, anchor="w",fill="white",font=('Andale Mono', 15), tag="CarInfo")
+            canvas1.create_text(350, 530, text=kinuy_mishari, anchor="w",fill="white",font=('Andale Mono', 15), tag="CarInfo")
 
             canvas1.update()
         return
@@ -438,13 +442,13 @@ def exitUI():
 root = Tk()
 
 # Adjust size
-root.geometry("900x400")
+root.geometry("1280x740")
 
 root.title('Car Scanner')
 
 # Add image file
-bg = PhotoImage(file="test2.png")
-
+# bg = PhotoImage(file="test2.png")
+bg = PhotoImage(file="unnamed.png")
 # Create Canvas
 canvas1 = Canvas(root, width=510,
                  height=400)
@@ -456,38 +460,41 @@ canvas1.create_image(0, 0, image=bg,
                      anchor="nw")
 
 # Add Text
-canvas1.create_text(320, 30, text="Welcome to the car scanner", font=('helvetica', 18, 'bold'))
-
+# canvas1.create_text(320, 30, text="Welcome to the car scanner",fill="white", font=('c', 18, 'bold'))
+font.families()
 # Add the field text
-canvas1.create_text(550, 50, text="Car Number: ", anchor="w")
-canvas1.create_text(550, 70, text="Manufacturer country:", anchor="w")
-canvas1.create_text(550, 90, text="Level:", anchor="w")
-canvas1.create_text(550, 110, text="Fitting safety level:", anchor="w")
-canvas1.create_text(550, 130, text="Production year:", anchor="w")
-canvas1.create_text(550, 150, text="Last vehicle licensing test:", anchor="w")
-canvas1.create_text(550, 170, text="Next vehicle licensing test:", anchor="w")
-canvas1.create_text(550, 190, text="Current ownership:", anchor="w")
-canvas1.create_text(550, 210, text="Car build number:", anchor="w")
-canvas1.create_text(550, 230, text="Color:", anchor="w")
-canvas1.create_text(550, 250, text="Fuel type:", anchor="w")
-canvas1.create_text(550, 270, text="Trade alias:", anchor="w")
+canvas1.create_text(50, 200, text="Car Number:",fill="white",font=('Andale Mono', 15), anchor="w")
+canvas1.create_text(50, 230, text="Manufacturer country:",fill="white",font=('Andale Mono', 15), anchor="w")
+canvas1.create_text(50, 260, text="Level:",fill="white",font=('Andale Mono', 15), anchor="w")
+canvas1.create_text(50, 290, text="Fitting safety level:",fill="white",font=('Andale Mono', 15), anchor="w")
+canvas1.create_text(50, 320, text="Production year:",fill="white",font=('Andale Mono', 15), anchor="w")
+canvas1.create_text(50, 350, text="Last vehicle licensing test:",fill="white",font=('Andale Mono', 15), anchor="w")
+canvas1.create_text(50, 380, text="Next vehicle licensing test:",fill="white",font=('Andale Mono', 15), anchor="w")
+canvas1.create_text(50, 410, text="Current ownership:",fill="white",font=('Andale Mono', 15), anchor="w")
+canvas1.create_text(50, 440, text="Car build number:",fill="white",font=('Andale Mono', 15), anchor="w")
+canvas1.create_text(50, 470, text="Color:",fill="white",font=('Andale Mono', 15), anchor="w")
+canvas1.create_text(50, 500, text="Fuel type:",fill="white",font=('Andale Mono', 15), anchor="w")
+canvas1.create_text(50, 530, text="Trade alias:",fill="white",font=('Andale Mono', 15), anchor="w")
 
-# Create Buttons
-importVideoButton = tkinter.Button(root, text="Import Video", command=importVideo,fg='blue',height=2, width=12)
-importImageButton = tkinter.Button(root, text= "Import Image", command=importImage,fg='blue', height=2, width=12)
-#importImageButton = tkinter.Button(root, text="Import Image", command=test)
-exitButton = tkinter.Button(root, text="Exit", command=exitUI, fg='red', height=2, width=5)
+# Create Buttonsv
+importImagePhoto = PhotoImage(file = "importImage.png")
+importVideoPhoto = PhotoImage(file = "ImportVideo.png")
+exitPhoto = PhotoImage(file = "Exit.png")
+
+importImageButton = tkinter.Button(root, image = importImagePhoto ,command=importImage,height=40, width=155)
+importVideoButton = tkinter.Button(root, image = importVideoPhoto, command=importVideo, height=35, width=147)
+exitButton = tkinter.Button(root, image = exitPhoto, command=exitUI, height=35, width=70)
 
 # Display Buttons
-importVideoButton_canvas = canvas1.create_window(30, 10,
-                                                 anchor="nw",
-                                                 window=importVideoButton)
-
-importImageButton_canvas = canvas1.create_window(30, 50,
+importImageButton_canvas = canvas1.create_window(48, 105,
                                                  anchor="nw",
                                                  window=importImageButton)
-
-exitButton_canvas = canvas1.create_window(30, 90, anchor="nw",
+importImageButton_canvas
+importVideoButton_canvas = canvas1.create_window(217, 105,
+                                                 anchor="nw",
+                                                 window=importVideoButton)
+importImageButton
+exitButton_canvas = canvas1.create_window(380, 110, anchor="nw",
                                           window=exitButton)
 
 # Execute tkinter
