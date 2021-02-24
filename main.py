@@ -481,20 +481,20 @@ importImagePhoto = PhotoImage(file = "importImage.png")
 importVideoPhoto = PhotoImage(file = "ImportVideo.png")
 exitPhoto = PhotoImage(file = "Exit.png")
 
-importImageButton = tkinter.Button(root, image = importImagePhoto ,command=importImage,height=40, width=155)
-importVideoButton = tkinter.Button(root, image = importVideoPhoto, command=importVideo, height=35, width=147)
-exitButton = tkinter.Button(root, image = exitPhoto, command=exitUI, height=35, width=70)
+importImageButton = tkinter.Button(root, image = importImagePhoto ,command=importImage,height=40, width=157)
+importVideoButton = tkinter.Button(root, image = importVideoPhoto, command=importVideo, height=35, width=149)
+exitButton = tkinter.Button(root, image = exitPhoto, command=exitUI, height=41, width=79)
 
 # Display Buttons
 importImageButton_canvas = canvas1.create_window(48, 105,
                                                  anchor="nw",
                                                  window=importImageButton)
 importImageButton_canvas
-importVideoButton_canvas = canvas1.create_window(217, 105,
+importVideoButton_canvas = canvas1.create_window(215, 105,
                                                  anchor="nw",
                                                  window=importVideoButton)
 importImageButton
-exitButton_canvas = canvas1.create_window(380, 110, anchor="nw",
+exitButton_canvas = canvas1.create_window(375, 106, anchor="nw",
                                           window=exitButton)
 
 # Execute tkinter
