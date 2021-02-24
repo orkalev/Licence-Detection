@@ -434,7 +434,6 @@ def importImage():
 def exitUI():
     exit(0)
 
-
 # Create object
 root = Tk()
 
@@ -457,7 +456,7 @@ canvas1.create_image(0, 0, image=bg,
                      anchor="nw")
 
 # Add Text
-canvas1.create_text(280, 30, text="Welcome to the licence detector")
+canvas1.create_text(320, 30, text="Welcome to the licence detector", font=('helvetica', 18, 'bold'))
 
 # Add the field text
 canvas1.create_text(550, 50, text="Car Number: ", anchor="w")
@@ -474,21 +473,21 @@ canvas1.create_text(550, 250, text="Fuel type:", anchor="w")
 canvas1.create_text(550, 270, text="Trade alias:", anchor="w")
 
 # Create Buttons
-importVideoButton = tkinter.Button(root, text="Import Video", command=importVideo)
-importImageButton = tkinter.Button(root,text= "Import Image",command=importImage)
+importVideoButton = tkinter.Button(root, text="Import Video", command=importVideo,fg='blue',height=2, width= 12)
+importImageButton = tkinter.Button(root, text= "Import Image", command=importImage,fg='blue', height=2, width= 12)
 #importImageButton = tkinter.Button(root, text="Import Image", command=test)
-exitButton = tkinter.Button(root, text="Exit", command=exitUI)
+exitButton = tkinter.Button(root, text="Exit", command=exitUI, fg='red', height=2, width= 5, bg='red')
 
 # Display Buttons
 importVideoButton_canvas = canvas1.create_window(30, 10,
                                                  anchor="nw",
                                                  window=importVideoButton)
 
-importImageButton_canvas = canvas1.create_window(30, 40,
+importImageButton_canvas = canvas1.create_window(30, 50,
                                                  anchor="nw",
                                                  window=importImageButton)
 
-exitButton_canvas = canvas1.create_window(30, 70, anchor="nw",
+exitButton_canvas = canvas1.create_window(30, 90, anchor="nw",
                                           window=exitButton)
 
 # Execute tkinter
