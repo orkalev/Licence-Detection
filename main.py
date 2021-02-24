@@ -5,6 +5,7 @@ from tkinter import *
 import requests
 import tkinter.filedialog as tkFileDialog
 import numpy as np
+from random import choice
 
 
 def filter_contrast(image):
@@ -123,7 +124,7 @@ def detect_plant(originalImage):
                     plate = cv2.cvtColor(adjusted, cv2.COLOR_BGR2GRAY)
                     licenseNum = pytesseract.image_to_string(plate, config='--psm 13 -c tessedit_char_whitelist=0123456789')
                     # Put the license number on the photo
-                    originalImage = cv2.putText(originalImage, '#' + licenseNum , (x - 100, y-10), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                    originalImage = cv2.putText(originalImage, licenseNum , (x - 100, y-10), cv2.FONT_HERSHEY_SIMPLEX, 1,
                                           (0, 255, 255), 2, cv2.LINE_AA)
                     cv2.drawContours(originalImage, [box], 0, (0, 0, 255), 2)
 
@@ -211,18 +212,18 @@ def importImage():
             sug_delek_nm = record["sug_delek_nm"]
             horaat_rishum = record["horaat_rishum"]
             kinuy_mishari = record["kinuy_mishari"]
-            canvas1.create_text(740, 50, text=str(mispar_rechev))
-            canvas1.create_text(770, 70, text=tozeret_nm)
-            canvas1.create_text(710, 90, text=ramat_gimur)
-            canvas1.create_text(760, 110, text=ramat_eivzur_betihuty)
-            canvas1.create_text(750, 130, text=shnat_yitzur)
-            canvas1.create_text(820, 150, text=mivchan_acharon_dt)
-            canvas1.create_text(820, 170, text=tokef_dt)
-            canvas1.create_text(740, 190, text=baalut)
-            canvas1.create_text(790, 210, text=misgeret)
-            canvas1.create_text(730, 230, text=tzeva_rechev)
-            canvas1.create_text(740, 250, text=sug_delek_nm)
-            canvas1.create_text(740, 270, text=kinuy_mishari)
+            canvas1.create_text(740, 50, text=str(mispar_rechev), anchor="w")
+            canvas1.create_text(740, 70, text=tozeret_nm, anchor="w")
+            canvas1.create_text(740, 90, text=ramat_gimur, anchor="w")
+            canvas1.create_text(740, 110, text=ramat_eivzur_betihuty, anchor="w")
+            canvas1.create_text(740, 130, text=shnat_yitzur, anchor="w")
+            canvas1.create_text(740, 150, text=mivchan_acharon_dt, anchor="w")
+            canvas1.create_text(740, 170, text=tokef_dt, anchor="w")
+            canvas1.create_text(740, 190, text=baalut, anchor="w")
+            canvas1.create_text(740, 210, text=misgeret, anchor="w")
+            canvas1.create_text(740, 230, text=tzeva_rechev, anchor="w")
+            canvas1.create_text(740, 250, text=sug_delek_nm, anchor="w")
+            canvas1.create_text(740, 270, text=kinuy_mishari, anchor="w")
 
             canvas1.update()
         return
@@ -259,18 +260,18 @@ canvas1.create_image(0, 0, image=bg,
 canvas1.create_text(280, 30, text="Welcome to the licence detector")
 
 # Add the field text
-canvas1.create_text(660, 50, text="Car Number: ")
-canvas1.create_text(660, 70, text="Manufacturer country:")
-canvas1.create_text(660, 90, text="Level:")
-canvas1.create_text(660, 110, text="Fitting safety level:")
-canvas1.create_text(660, 130, text="Production year:")
-canvas1.create_text(650, 150, text="Last vehicle licensing test:")
-canvas1.create_text(650, 170, text="Next vehicle licensing test:")
-canvas1.create_text(660, 190, text="Current ownership:")
-canvas1.create_text(650, 210, text="Car build number:")
-canvas1.create_text(660, 230, text="Color:")
-canvas1.create_text(660, 250, text="Fuel type:")
-canvas1.create_text(660, 270, text="Trade alias:")
+canvas1.create_text(550, 50, text="Car Number: ", anchor="w")
+canvas1.create_text(550, 70, text="Manufacturer country:", anchor="w")
+canvas1.create_text(550, 90, text="Level:", anchor="w")
+canvas1.create_text(550, 110, text="Fitting safety level:", anchor="w")
+canvas1.create_text(550, 130, text="Production year:", anchor="w")
+canvas1.create_text(550, 150, text="Last vehicle licensing test:", anchor="w")
+canvas1.create_text(550, 170, text="Next vehicle licensing test:", anchor="w")
+canvas1.create_text(550, 190, text="Current ownership:", anchor="w")
+canvas1.create_text(550, 210, text="Car build number:", anchor="w")
+canvas1.create_text(550, 230, text="Color:", anchor="w")
+canvas1.create_text(550, 250, text="Fuel type:", anchor="w")
+canvas1.create_text(550, 270, text="Trade alias:", anchor="w")
 
 # Create Buttons
 importVideoButton = tkinter.Button(root, text="Import Video", command=importVideo)
