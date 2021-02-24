@@ -496,6 +496,5 @@ importVideoButton_canvas = canvas1.create_window(215, 105,
 importImageButton
 exitButton_canvas = canvas1.create_window(375, 106, anchor="nw",
                                           window=exitButton)
-
 # Execute tkinter
 root.mainloop()
