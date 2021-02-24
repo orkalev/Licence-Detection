@@ -473,10 +473,10 @@ canvas1.create_text(550, 250, text="Fuel type:", anchor="w")
 canvas1.create_text(550, 270, text="Trade alias:", anchor="w")
 
 # Create Buttons
-importVideoButton = tkinter.Button(root, text="Import Video", command=importVideo,fg='blue',height=2, width= 12)
-importImageButton = tkinter.Button(root, text= "Import Image", command=importImage,fg='blue', height=2, width= 12)
+importVideoButton = tkinter.Button(root, text="Import Video", command=importVideo,fg='white',height=2, width= 12, bg='blue')
+importImageButton = tkinter.Button(root, text= "Import Image", command=importImage,fg='white', height=2, width= 12, bg='blue')
 #importImageButton = tkinter.Button(root, text="Import Image", command=test)
-exitButton = tkinter.Button(root, text="Exit", command=exitUI, fg='red', height=2, width= 5, bg='red')
+exitButton = tkinter.Button(root, text="Exit", command=exitUI, fg='white', height=2, width= 5, bg='red')
 
 # Display Buttons
 importVideoButton_canvas = canvas1.create_window(30, 10,
