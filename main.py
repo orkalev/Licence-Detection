@@ -37,9 +37,6 @@ def detect_plate(originalImage):
     copyImage = originalImage.copy()       # Copy Image
     hsvColorImage = cv2.cvtColor(originalImage, cv2.COLOR_BGR2HSV) # RGB -> HSV (for yellow sepration )
     yellowImage = cv2.inRange(hsvColorImage, np.array([17, 90, 90]), np.array([30, 255, 255]))      # get all range from low to high
-    cv2.imshow("The car before detection", yellowImage)
-    cv2.waitKey(0)
-    cv2.destroyWindow("The car before detection")
     yellowGrayImage = cv2.bitwise_and(yellowImage, yellowImage, mask=yellowImage)   # bit wise and to transporm to gray image
     k = np.ones((5, 5), np.uint8)      #Creat structer element
 
@@ -49,6 +46,8 @@ def detect_plate(originalImage):
 
     # Detected yellow area
     contours, her = cv2.findContours(closingMorpho, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)    # contours aka claster
+    # print(contours)
+
 
     # Loop over contours and find license plates
     for contour in contours:
@@ -64,7 +63,6 @@ def detect_plate(originalImage):
             imgray = cv2.cvtColor(originalImage, cv2.COLOR_BGR2GRAY)
             cropImageYellow = originalImage[y:y + h, x:x + w]
             cropImageYellow = cropImageYellow.astype('uint8')
-
             # Detect yellow color
             hsvColorImage = cv2.cvtColor(cropImageYellow, cv2.COLOR_BGR2HSV)
             yellowImage = cv2.inRange(hsvColorImage, np.array([20, 100, 100]), np.array([30, 255, 255]))
@@ -124,9 +122,10 @@ def detect_plate(originalImage):
                     M = cv2.getPerspectiveTransform(rect, dst)
                     adjusted = cv2.warpPerspective(copyImage, M, (maxWidth, maxHeight))
 
-                    #adjusted = filter_contrast(four_point_transform(copyImage, pts))
+                    adjusted = filter_contrast(four_point_transform(copyImage, pts))
                     plate = cv2.cvtColor(adjusted, cv2.COLOR_BGR2GRAY)
                     licenseNum = pytesseract.image_to_string(plate, config='--psm 13 -c tessedit_char_whitelist=0123456789')
+                    licenseNum = licenseNum[:-2]
                     # Put the license number on the photo
                     originalImage = cv2.putText(originalImage, licenseNum , (x - 100, y-10), cv2.FONT_HERSHEY_SIMPLEX, 1,
                                           (0, 255, 255), 2, cv2.LINE_AA)
@@ -394,7 +393,7 @@ def importImage():
         res = r.json()
         record1 = res['result']['records']
         if len(record1) == 0:
-            print("The car " + licenseNum + "is not at the data set")
+            canvas1.create_text(350, 230, text='The car is not at the data set' ,fill="white",font=('Andale Mono', 20), anchor="w", tag="CarInfo")
         else:
             record = record1[0]
             mispar_rechev = record["mispar_rechev"]
