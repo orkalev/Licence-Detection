@@ -137,36 +137,27 @@ def detect_plate(originalImage):
 
 def importVideo():
     path = tkFileDialog.askopenfilename()
-    cap = cv2.VideoCapture(path)
+    video = cv2.VideoCapture(path)
 
-    if cap.isOpened() == False:
-        print("Error opening video stream or file")
+    if video.isOpened() == False:
+        print("Error opening video")
 
-    while (cap.isOpened()):
-        ret, frame = cap.read()
+    while (video.isOpened()):
+        ret, frame = video.read()
         if ret == True:
-
-            frame, crop = detect_plate(frame)
-            # Display the resulting frame
-
-            cv2.putText(frame, 'Press \'Q\' to exit !',(50, 50),cv2.FONT_HERSHEY_SIMPLEX,1,(0, 0, 255), 2)
-            cv2.imshow('Frame', frame)
-
+            originalImage, licenseNum = detect_plate(frame)
+            print(licenseNum)
+            cv2.putText(originalImage, 'Press \'Q\' to exit !',(50, 50),cv2.FONT_HERSHEY_SIMPLEX,1,(0, 0, 255), 2)
+            cv2.imshow('Frame', originalImage)
             # Press Q on keyboard to  exit
             if cv2.waitKey(25) & 0xFF == ord('q'):
                 break
-
-
         # Break the loop
         else:
             break
-
     # When everything done, release the video capture object
-    cap.release()
-
-    # Closes all the frames
+    video.release()
     cv2.destroyAllWindows()
-
 
 
 def importImage():
